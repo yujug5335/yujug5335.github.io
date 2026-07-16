@@ -233,6 +233,19 @@
   .letter-bad{color:var(--red); text-decoration:underline; text-decoration-thickness:2px}
   #writeStage .answer-row input{ text-align:center; font-size:1.5rem; letter-spacing:.03em }
   .lscwc-caption{ text-align:center; font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); margin:0 0 4px }
+  .answer-popup{
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.5); opacity:0;
+    color:#fff; font-weight:900; font-size:1.6rem; padding:20px 36px;
+    border-radius:20px; z-index:90; pointer-events:none; max-width:90vw;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s ease; text-align:center;
+  }
+  .answer-popup.show{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+  .answer-popup.correct{ background:var(--green); box-shadow:0 10px 40px rgba(47,168,107,0.5); }
+  .answer-popup.incorrect{ background:var(--red); box-shadow:0 10px 40px rgba(224,85,79,0.5); }
+  .review-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; margin-bottom:6px; background:var(--bg) }
+  .review-item .review-icon{ font-size:1.05rem }
+  .review-item .review-word{ font-weight:700; flex:1 }
+  .review-item .review-given{ font-size:.78rem; color:var(--ink-soft) }
 </style>
 
 <header class="top">
@@ -306,12 +319,14 @@
     <div id="lookStage">
       <p class="lscwc-caption">Look — Say — Cover — Write — Check</p>
       <div class="spelling-word-display" id="wordDisplay"></div>
+      <p id="wordSentence" style="text-align:center; font-style:italic; color:var(--ink-soft); font-size:.9rem; margin:0 0 14px"></p>
       <p style="color:var(--ink-soft); font-size:.9rem; margin-top:0">Look carefully at the word. Say it out loud, breaking it into sounds or letters if that helps. When you're confident, cover it and write it from memory.</p>
       <button class="btn btn-primary" onclick="goToWriteStage()">🙈 Cover it — I'm ready to write</button>
     </div>
 
     <div id="writeStage" class="hidden">
       <div class="question-text">Write the word from memory:</div>
+      <p id="writeSentenceHint" style="font-style:italic; color:var(--ink-soft); font-size:.85rem; margin:-6px 0 12px"></p>
       <div class="answer-row">
         <input type="text" id="answerInput" placeholder="Type the word" autocomplete="off" autocapitalize="off" spellcheck="false">
         <button class="btn btn-primary" id="submitBtn" onclick="submitAnswer()">Check</button>
@@ -322,12 +337,21 @@
       <div class="feedback-title" id="feedbackTitle"></div>
       <div id="feedbackBody"></div>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" id="modalActions">
       <button class="btn btn-ghost btn-small" onclick="closeModal()">Stop here</button>
       <button class="btn btn-secondary" id="nextBtn" style="display:none" onclick="nextQuestion()">Next word →</button>
     </div>
+
+    <div id="reviewStage" class="hidden">
+      <h2 style="margin-top:0">🎉 Session complete!</h2>
+      <p id="reviewSummary" style="color:var(--ink-soft); font-size:.92rem"></p>
+      <div id="reviewList"></div>
+      <button class="btn btn-primary" style="width:100%; margin-top:16px" onclick="closeModal()">Done</button>
+    </div>
   </div>
 </div>
+
+<div class="answer-popup" id="answerPopup"></div>
 
 <script>
 /* ---------- Statutory spelling word lists ----------
@@ -369,6 +393,230 @@ const TIPS = {
   vehicle: "There's a silent h in the middle: ve-h-icle.",
   twelfth: "It keeps the 'f' from twelve, then adds 'th'.",
   business: "It's 'busy' + 'ness', with the y changed to i.",
+  mischievous: "It's mis-chiev-ous — only 3 syllables. A common trap is adding an extra 'i' to make it 'mischievious', but that's wrong.",
+  forty: "Forty drops the 'u' that 'four' has: f-o-r-t-y, not f-o-u-r-t-y.",
+  recommend: "One c, two m's — easy to get backwards.",
+  immediately: "Don't lose the middle e: immediate + ly.",
+  desperate: "There's 'a rat' hiding in it, just like separate: desp-a-rat-e.",
+};
+
+/* One original example sentence per statutory word, for context during
+   the "Look" stage -- seeing a word used naturally helps meaning and
+   recall, not just the raw spelling. */
+const SENTENCES = {
+  accident: "It was an accident, not something he planned.",
+  accidentally: "She accidentally dropped her phone in the sink.",
+  actual: "Nobody knew the actual reason for the delay.",
+  actually: "I actually enjoyed the maths lesson today.",
+  address: "Write your address clearly at the top of the letter.",
+  answer: "Raise your hand if you know the answer.",
+  appear: "The stars appear once the sky gets dark.",
+  arrive: "We should arrive at school by nine.",
+  believe: "I believe you did your best.",
+  bicycle: "He rides his bicycle to school every day.",
+  breath: "Take a deep breath before you dive in.",
+  breathe: "Remember to breathe slowly when you're nervous.",
+  build: "The class will build a model bridge this week.",
+  busy: "The kitchen was busy on Christmas morning.",
+  business: "Her grandmother ran a small business in the village.",
+  calendar: "Mark the trip on the calendar so we don't forget.",
+  caught: "The goalkeeper caught the ball just in time.",
+  centre: "The fountain stands in the centre of the square.",
+  century: "The castle was built over a century ago.",
+  certain: "I'm certain I left my keys on the table.",
+  circle: "Draw a circle around the correct answer.",
+  complete: "Complete the worksheet before break time.",
+  consider: "Please consider both sides before you decide.",
+  continue: "We will continue the story after lunch.",
+  decide: "It's your turn to decide where we go.",
+  describe: "Can you describe what the creature looked like?",
+  different: "Each snowflake has a different pattern.",
+  difficult: "That last question was quite difficult.",
+  disappear: "The magician made the coin disappear.",
+  early: "We left early to beat the traffic.",
+  earth: "The earth takes a year to orbit the sun.",
+  eight: "She has eight stickers left in her book.",
+  eighth: "Today is the eighth day of our holiday.",
+  enough: "Is there enough juice for everyone?",
+  exercise: "A short walk is good exercise.",
+  experience: "It was her first experience of camping.",
+  experiment: "The class did a fizzy experiment with vinegar.",
+  extreme: "The climbers faced extreme cold near the summit.",
+  famous: "The painting is famous all over the world.",
+  favourite: "Blue is my favourite colour.",
+  February: "Half term falls in February this year.",
+  forward: "Lean forward and keep your balance.",
+  forwards: "The dancers stepped forwards in time with the music.",
+  fruit: "We packed fruit and sandwiches for the picnic.",
+  grammar: "This lesson is all about grammar rules.",
+  group: "Split into a group of four.",
+  guard: "A guard stood at the palace gates.",
+  guide: "The ranger will guide us through the forest.",
+  heard: "I heard a strange noise upstairs.",
+  heart: "Her heart raced before the race began.",
+  height: "The height of the tower amazed everyone.",
+  history: "We're learning about Roman history this term.",
+  imagine: "Imagine a world without electricity.",
+  increase: "Sales tend to increase before the holidays.",
+  important: "It's important to check your work.",
+  interest: "She showed great interest in the stars.",
+  island: "The ship sailed towards a small island.",
+  knowledge: "His knowledge of dinosaurs is impressive.",
+  learn: "We learn something new every day.",
+  length: "Measure the length of the table in centimetres.",
+  library: "I borrowed two books from the library.",
+  material: "This jacket is made from a waterproof material.",
+  medicine: "Take your medicine after breakfast.",
+  mention: "Did she mention what time the party starts?",
+  minute: "Wait one minute while I find my shoes.",
+  natural: "Honey is a natural sweetener.",
+  naughty: "The puppy was naughty and chewed a slipper.",
+  notice: "Did you notice the new sign outside?",
+  occasion: "We only use the good plates on a special occasion.",
+  occasionally: "He occasionally forgets his lunch.",
+  often: "We often walk to school together.",
+  opposite: "North is the opposite of south.",
+  ordinary: "It was just an ordinary Tuesday.",
+  particular: "She has a particular way of folding towels.",
+  peculiar: "There was a peculiar smell in the hallway.",
+  perhaps: "Perhaps we should leave a little earlier.",
+  popular: "That song became popular very quickly.",
+  position: "Move into position before the whistle blows.",
+  possess: "Few people possess such patience.",
+  possession: "The ring was her most treasured possession.",
+  possible: "Is it possible to finish by Friday?",
+  potatoes: "We grew potatoes in the garden this year.",
+  pressure: "Check the tyre pressure before a long trip.",
+  probably: "It will probably rain later.",
+  promise: "I promise to text you when I arrive.",
+  purpose: "The meeting has one clear purpose.",
+  quarter: "Cut the orange into a quarter.",
+  question: "That's a really good question.",
+  recent: "Her most recent painting is her best yet.",
+  regular: "He has a regular bedtime of eight o'clock.",
+  reign: "The queen's reign lasted many years.",
+  remember: "Remember to bring your PE kit tomorrow.",
+  sentence: "Write a sentence using the word 'because'.",
+  separate: "Keep the wet clothes in a separate bag.",
+  special: "Today is a special day for our school.",
+  straight: "Draw a straight line to the edge of the page.",
+  strange: "A strange sound came from the attic.",
+  strength: "It takes strength to carry that box alone.",
+  suppose: "I suppose we could try again tomorrow.",
+  surprise: "They planned a surprise party for their dad.",
+  therefore: "It was raining; therefore, we stayed inside.",
+  though: "Though it was cold, they still went outside.",
+  although: "Although he was tired, he finished the race.",
+  thought: "I thought you were coming with us.",
+  through: "The train went straight through the tunnel.",
+  various: "The shop sells various flavours of ice cream.",
+  weight: "The weight of the box surprised her.",
+  woman: "The woman at the desk smiled kindly.",
+  women: "Two women led the expedition up the mountain.",
+  accommodate: "The hotel can accommodate six guests in one room.",
+  accompany: "Would you like me to accompany you to the shop?",
+  according: "According to the forecast, it will snow tonight.",
+  achieve: "She worked hard to achieve her goal.",
+  aggressive: "The dog became aggressive when strangers approached.",
+  amateur: "He's just an amateur photographer, but his photos are brilliant.",
+  ancient: "The museum displays ancient Egyptian artefacts.",
+  apparent: "It was apparent that something was wrong.",
+  appreciate: "I really appreciate your help today.",
+  attached: "Please find the file attached to this email.",
+  available: "Tickets are still available for Saturday's show.",
+  average: "The average temperature dropped this week.",
+  awkward: "There was an awkward silence in the room.",
+  bargain: "She found a real bargain at the market.",
+  bruise: "He got a small bruise on his knee.",
+  category: "Sort the animals into the correct category.",
+  cemetery: "The old cemetery sits behind the church.",
+  committee: "The committee will meet on Thursday.",
+  communicate: "We communicate mostly by text these days.",
+  community: "The whole community came together to help.",
+  competition: "She entered the baking competition last year.",
+  conscience: "His conscience told him to own up.",
+  conscious: "She was fully conscious after the fall.",
+  controversy: "The new rule caused quite a controversy.",
+  convenience: "The shop stays open late for convenience.",
+  correspond: "The two letters don't correspond with each other.",
+  criticise: "It's easy to criticise, harder to help.",
+  curiosity: "Curiosity led her to open the mysterious box.",
+  definite: "There's no definite answer yet.",
+  desperate: "He grew desperate as the deadline approached.",
+  determined: "She was determined to finish the marathon.",
+  develop: "New skills take time to develop.",
+  dictionary: "Look the word up in a dictionary.",
+  disastrous: "The picnic was a disastrous idea in the rain.",
+  embarrass: "Loud singing in public doesn't embarrass him at all.",
+  environment: "We should look after our environment.",
+  equip: "The course will equip you with new skills.",
+  equipped: "The kitchen is fully equipped for baking.",
+  equipment: "Pack your equipment before the trip.",
+  especially: "I love animals, especially dogs.",
+  exaggerate: "Don't exaggerate the size of the fish you caught.",
+  excellent: "That was an excellent piece of work.",
+  existence: "Scientists debated the existence of the new species.",
+  explanation: "She gave a clear explanation of the rules.",
+  familiar: "The song sounded familiar to everyone.",
+  foreign: "He learned a foreign language at school.",
+  forty: "There are forty children in Year 6 this year.",
+  frequently: "Buses run frequently during rush hour.",
+  government: "The government announced a new plan today.",
+  guarantee: "The shop offers a two-year guarantee.",
+  harass: "Nobody should harass another person online.",
+  hindrance: "The heavy rain was a hindrance to the match.",
+  identity: "Keep your identity safe online.",
+  immediate: "The alarm needed an immediate response.",
+  immediately: "Please come here immediately.",
+  individual: "Each individual has their own way of learning.",
+  interfere: "Try not to interfere with their game.",
+  interrupt: "Please don't interrupt while I'm talking.",
+  language: "French is a beautiful language.",
+  leisure: "Reading is one of my leisure activities.",
+  lightning: "The lightning lit up the whole sky.",
+  marvellous: "It was a marvellous performance.",
+  mischievous: "The kitten had a mischievous look in its eyes.",
+  muscle: "He pulled a muscle during football practice.",
+  necessary: "It isn't necessary to bring anything else.",
+  neighbour: "Our neighbour waters our plants when we're away.",
+  nuisance: "The buzzing fly was a real nuisance.",
+  occupy: "The puzzle kept her occupied for an hour.",
+  occur: "Mistakes can occur even when you're careful.",
+  opportunity: "This trip is a great opportunity to learn.",
+  parliament: "Parliament will debate the new law tomorrow.",
+  persuade: "She tried to persuade him to join the team.",
+  physical: "PE focuses on physical activity.",
+  prejudice: "The book explores prejudice and fairness.",
+  privilege: "It's a privilege to represent the school.",
+  profession: "Teaching is a rewarding profession.",
+  programme: "We watched a nature programme last night.",
+  pronunciation: "Her pronunciation of the French words improved quickly.",
+  queue: "There was a long queue outside the cinema.",
+  recognise: "I didn't recognise you with your new haircut.",
+  recommend: "Can you recommend a good book?",
+  relevant: "Only include information that is relevant.",
+  restaurant: "We booked a table at the new restaurant.",
+  rhyme: "Find a word that rhymes with 'cat'.",
+  rhythm: "The drummer kept a steady rhythm.",
+  sacrifice: "She made a sacrifice to help her team.",
+  secretary: "The secretary organised the meeting notes.",
+  shoulder: "He carried the bag over his shoulder.",
+  signature: "Sign your signature at the bottom of the form.",
+  sincere: "Her apology sounded completely sincere.",
+  sincerely: "Yours sincerely, the whole class.",
+  soldier: "The soldier saluted as the flag was raised.",
+  stomach: "Butterflies filled her stomach before the show.",
+  sufficient: "One bag of flour should be sufficient.",
+  suggest: "What do you suggest we do next?",
+  symbol: "A heart is a symbol of love.",
+  system: "The school uses a new reward system.",
+  temperature: "Check the temperature before you go outside.",
+  thorough: "She did a thorough check of her work.",
+  twelfth: "Today is the twelfth of the month.",
+  variety: "The market sells a huge variety of fruit.",
+  vegetable: "Carrots are her favourite vegetable.",
+  vehicle: "The vehicle pulled up outside the school gates.",
+  yacht: "The yacht sailed gently across the bay.",
 };
 
 function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -466,7 +714,7 @@ const INCORRECT_MESSAGES = [
 ];
 
 /* ---------- Session logic ---------- */
-let session = { words:[], index:0, currentWord:null };
+let session = { words:[], index:0, currentWord:null, results:[] };
 
 function buildWordQueue(bandId, length){
   const words = bandWords(bandId);
@@ -488,12 +736,18 @@ function startSession(kind){
   if(kind !== 'daily'){ setDifficulty(kind); }
   session.words = buildWordQueue(band, appSettings.sessionLength);
   session.index = 0;
+  session.results = [];
   openModal();
   loadWordAt(0);
 }
 
 function loadWordAt(i){
-  if(i >= session.words.length){ closeModal(); return; }
+  if(i >= session.words.length){ showReview(); return; }
+  document.getElementById('modalTopicTag').classList.remove('hidden');
+  document.getElementById('sessionProgress').classList.remove('hidden');
+  document.getElementById('lookStage').classList.remove('hidden');
+  document.getElementById('modalActions').classList.remove('hidden');
+  document.getElementById('reviewStage').classList.add('hidden');
   session.currentWord = session.words[i];
   const band = BANDS.find(b => bandWords(b.id).includes(session.currentWord)) || BANDS[0];
 
@@ -502,6 +756,7 @@ function loadWordAt(i){
   document.getElementById('modalTopicTag').style.color = topicColors[band.color];
   document.getElementById('sessionProgress').textContent = `Word ${i+1} of ${session.words.length}`;
   document.getElementById('wordDisplay').textContent = session.currentWord;
+  document.getElementById('wordSentence').textContent = SENTENCES[session.currentWord] ? `"${SENTENCES[session.currentWord]}"` : '';
   document.getElementById('lookStage').classList.remove('hidden');
   document.getElementById('writeStage').classList.add('hidden');
   document.getElementById('answerInput').value = '';
@@ -514,6 +769,14 @@ function loadWordAt(i){
 function goToWriteStage(){
   document.getElementById('lookStage').classList.add('hidden');
   document.getElementById('writeStage').classList.remove('hidden');
+  const sentence = SENTENCES[session.currentWord];
+  const hint = document.getElementById('writeSentenceHint');
+  if(sentence){
+    const blanked = sentence.replace(new RegExp(session.currentWord, 'i'), '_____');
+    hint.textContent = `"${blanked}"`;
+  } else {
+    hint.textContent = '';
+  }
   document.getElementById('answerInput').focus();
 }
 
@@ -549,6 +812,9 @@ function submitAnswer(){
   renderHeaderStats();
   renderTopics();
 
+  session.results.push({ word, given: input.value.trim(), correct });
+  showAnswerPopup(correct);
+
   const box = document.getElementById('feedbackBox');
   box.className = 'feedback-box show ' + (correct ? 'correct' : 'incorrect');
   document.getElementById('feedbackTitle').innerHTML = correct
@@ -571,6 +837,35 @@ function submitAnswer(){
 function nextQuestion(){
   session.index += 1;
   loadWordAt(session.index);
+}
+
+const CORRECT_POPUP_MESSAGES = ['✅ Correct!', '🌟 Nailed it!', '✅ Spot on!', '🎉 Yes!'];
+const INCORRECT_POPUP_MESSAGES = ['💪 Good try!', '💪 Keep going!', '💪 Nearly there!', '💪 Have a look below'];
+function showAnswerPopup(correct){
+  const el = document.getElementById('answerPopup');
+  el.textContent = choice(correct ? CORRECT_POPUP_MESSAGES : INCORRECT_POPUP_MESSAGES);
+  el.className = 'answer-popup show ' + (correct ? 'correct' : 'incorrect');
+  clearTimeout(showAnswerPopup._t);
+  showAnswerPopup._t = setTimeout(() => el.classList.remove('show'), 900);
+}
+
+function showReview(){
+  document.getElementById('modalTopicTag').classList.add('hidden');
+  document.getElementById('sessionProgress').classList.add('hidden');
+  document.getElementById('lookStage').classList.add('hidden');
+  document.getElementById('writeStage').classList.add('hidden');
+  document.getElementById('feedbackBox').className = 'feedback-box';
+  document.getElementById('modalActions').classList.add('hidden');
+  const correctCount = session.results.filter(r => r.correct).length;
+  document.getElementById('reviewSummary').textContent = `You practised ${session.results.length} word${session.results.length===1?'':'s'} — ${correctCount} spelled correctly first time. Have a look back through them below.`;
+  document.getElementById('reviewList').innerHTML = session.results.map(r => `
+    <div class="review-item">
+      <span class="review-icon">${r.correct ? '✅' : '💪'}</span>
+      <span class="review-word">${r.word}</span>
+      ${r.correct ? '' : `<span class="review-given">you wrote: ${r.given || '(nothing)'}</span>`}
+    </div>
+  `).join('');
+  document.getElementById('reviewStage').classList.remove('hidden');
 }
 
 function openModal(){ document.getElementById('overlay').classList.add('show'); }
