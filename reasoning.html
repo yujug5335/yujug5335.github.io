@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Everything SATS — Reasoning</title>
+<style>
+  :root{
+    --bg:#F3F6FB; --bg-alt:#FFFFFF; --ink:#1E2A3A; --ink-soft:#5C6B7E;
+    --line:#DCE4EE; --shadow:0 4px 14px rgba(30,42,58,0.08);
+    --blue:#3D7BD9; --blue-light:#E3ECFB;
+    --green:#2FA86B; --green-light:#E1F6EB;
+    --red:#E0554F; --red-light:#FBE6E5;
+    --gold:#E8A93A; --gold-light:#FCF1DD;
+    --purple:#8B5FBF; --purple-light:#F0E7FA;
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161F; --bg-alt:#1A202C; --ink:#EAF0F9; --ink-soft:#96A3B8;
+      --line:#2A3242; --shadow:0 4px 14px rgba(0,0,0,0.4);
+      --blue-light:#1D3153; --green-light:#173829; --red-light:#3A2020;
+      --gold-light:#3A2E14; --purple-light:#2C2140;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161F; --bg-alt:#1A202C; --ink:#EAF0F9; --ink-soft:#96A3B8;
+    --line:#2A3242; --shadow:0 4px 14px rgba(0,0,0,0.4);
+    --blue-light:#1D3153; --green-light:#173829; --red-light:#3A2020;
+    --gold-light:#3A2E14; --purple-light:#2C2140;
+  }
+  :root[data-theme="light"]{
+    --bg:#F3F6FB; --bg-alt:#FFFFFF; --ink:#1E2A3A; --ink-soft:#5C6B7E;
+    --line:#DCE4EE; --shadow:0 4px 14px rgba(30,42,58,0.08);
+    --blue-light:#E3ECFB; --green-light:#E1F6EB; --red-light:#FBE6E5;
+    --gold-light:#FCF1DD; --purple-light:#F0E7FA;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:40px;
+  }
+  header.top{
+    position:relative;
+    background:linear-gradient(120deg,var(--blue) 0%,var(--purple) 100%);
+    color:#fff; padding:22px 18px 26px; text-align:center;
+    border-radius:0 0 24px 24px; box-shadow:var(--shadow);
+  }
+  :root[data-calm="true"] header.top{ background:var(--blue); }
+  .settings-btn{
+    position:absolute; top:14px; right:16px; background:rgba(255,255,255,0.18);
+    border:none; border-radius:10px; width:38px; height:38px; font-size:1.1rem;
+    cursor:pointer; color:#fff;
+  }
+  .difficulty-row{ margin-top:16px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap }
+  .difficulty-label{ font-size:.82rem; opacity:.9 }
+  .difficulty-tabs{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center }
+  .difficulty-tabs button{
+    background:rgba(255,255,255,0.15); color:#fff; border:2px solid transparent;
+    border-radius:999px; padding:6px 14px; font-size:.82rem; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .difficulty-tabs button.active{ background:#fff; color:var(--blue); border-color:#fff }
+  .setting-row{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    padding:14px 0; border-bottom:1px solid var(--line);
+  }
+  .setting-title{ font-weight:700; font-size:.92rem }
+  .setting-sub{ font-size:.78rem; color:var(--ink-soft); margin-top:2px }
+  .setting-note{ font-size:.8rem; color:var(--ink-soft); margin-top:16px; text-align:center }
+  select{
+    font-family:inherit; font-size:.9rem; padding:6px 10px; border-radius:8px;
+    border:2px solid var(--line); background:var(--bg-alt); color:var(--ink);
+  }
+  .switch{ position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0 }
+  .switch input{ opacity:0; width:0; height:0 }
+  .slider{
+    position:absolute; cursor:pointer; inset:0; background:var(--line);
+    border-radius:999px; transition:background .15s ease;
+  }
+  .slider::before{
+    content:""; position:absolute; height:18px; width:18px; left:3px; bottom:3px;
+    background:#fff; border-radius:50%; transition:transform .15s ease;
+  }
+  .switch input:checked + .slider{ background:var(--blue) }
+  .switch input:checked + .slider::before{ transform:translateX(20px) }
+  :root[data-large-text="true"] .question-text{ font-size:1.7rem }
+  :root[data-large-text="true"] .answer-row input{ font-size:1.5rem }
+  .brand-tag{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; opacity:.85; margin-bottom:2px}
+  .back-link{ display:inline-block; margin-top:10px; color:#fff; opacity:.9; font-size:.8rem; text-decoration:underline; }
+  header.top h1{margin:0 0 4px; font-size:1.5rem; text-wrap:balance}
+  header.top p{margin:0; opacity:.9; font-size:.88rem}
+  .streak-row{
+    display:flex; justify-content:center; gap:18px; margin-top:14px; flex-wrap:wrap;
+  }
+  .streak-chip{
+    background:rgba(255,255,255,0.18); border-radius:999px; padding:6px 14px;
+    font-size:.85rem; font-weight:600; display:flex; align-items:center; gap:6px;
+  }
+  main{max-width:920px; margin:0 auto; padding:20px 16px}
+  .daily-card{
+    background:var(--bg-alt); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:20px; margin-bottom:22px; display:flex; justify-content:space-between;
+    align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .daily-card h2{margin:0 0 4px; font-size:1.1rem}
+  .daily-card p{margin:0; color:var(--ink-soft); font-size:.86rem}
+  .btn{
+    border:none; border-radius:12px; padding:12px 20px; font-size:.95rem; font-weight:700;
+    cursor:pointer; transition:transform .12s ease, box-shadow .12s ease; font-family:inherit;
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn-primary{background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(61,123,217,0.35)}
+  .btn-ghost{background:var(--blue-light); color:var(--blue)}
+  .btn-secondary{background:var(--green); color:#fff}
+  .btn-small{padding:8px 14px; font-size:.82rem; border-radius:9px}
+  .topics-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px;
+  }
+  .topic-card{
+    background:var(--bg-alt); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px; cursor:pointer; transition:transform .15s ease;
+    border:2px solid transparent;
+  }
+  .topic-card:hover{transform:translateY(-2px)}
+  .topic-head{display:flex; align-items:center; gap:10px; margin-bottom:8px}
+  .topic-icon{font-size:1.6rem}
+  .topic-name{font-weight:700; font-size:1.02rem}
+  .topic-sub{color:var(--ink-soft); font-size:.78rem; margin-bottom:12px}
+  .progress-track{
+    height:9px; background:var(--line); border-radius:999px; overflow:hidden; margin-bottom:6px;
+  }
+  .progress-fill{height:100%; border-radius:999px; transition:width .4s ease}
+  .progress-label{font-size:.72rem; color:var(--ink-soft); display:flex; justify-content:space-between}
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(15,20,30,0.55); display:none;
+    align-items:center; justify-content:center; padding:16px; z-index:50;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    background:var(--bg-alt); border-radius:20px; max-width:560px; width:100%;
+    max-height:90vh; overflow-y:auto; padding:26px; box-shadow:0 20px 50px rgba(0,0,0,0.3);
+  }
+  .modal-topic-tag{
+    display:inline-block; font-size:.72rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; padding:4px 10px; border-radius:999px; margin-bottom:14px;
+  }
+  .question-text{
+    font-size:1.35rem; font-weight:700; line-height:1.5; margin-bottom:18px;
+    font-variant-numeric:tabular-nums;
+  }
+  .answer-row{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap}
+  .answer-row input{
+    flex:1; min-width:140px; font-size:1.2rem; padding:12px 14px; border-radius:12px;
+    border:2px solid var(--line); background:var(--bg); color:var(--ink); font-family:inherit;
+    font-variant-numeric:tabular-nums;
+  }
+  .answer-row input:focus{outline:none; border-color:var(--blue)}
+  .feedback-box{
+    border-radius:14px; padding:16px; margin-top:12px; display:none;
+  }
+  .feedback-box.show{display:block}
+  .feedback-box.correct{background:var(--green-light); border:2px solid var(--green)}
+  .feedback-box.incorrect{background:var(--red-light); border:2px solid var(--red)}
+  .feedback-title{font-weight:800; font-size:1.05rem; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .feedback-box.correct .feedback-title{color:var(--green)}
+  .feedback-box.incorrect .feedback-title{color:var(--red)}
+  .working-steps{margin:10px 0 0; padding-left:20px; font-size:.9rem; line-height:1.7}
+  .working-steps li{margin-bottom:4px}
+  .final-answer{
+    margin-top:10px; font-weight:700; font-size:.95rem; background:var(--bg-alt);
+    border-radius:10px; padding:8px 12px; display:inline-block;
+  }
+  .modal-actions{display:flex; justify-content:space-between; align-items:center; margin-top:18px; gap:10px}
+  .close-x{
+    position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.3rem;
+    cursor:pointer; color:var(--ink-soft);
+  }
+  .modal{position:relative}
+  .session-progress{font-size:.78rem; color:var(--ink-soft); margin-bottom:10px}
+  .empty-note{color:var(--ink-soft); text-align:center; padding:30px}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <button class="settings-btn" onclick="openSettings()" aria-label="Settings">⚙️</button>
+  <div class="brand-tag">Everything SATS</div>
+  <h1>🧩 Reasoning</h1>
+  <p>Papers 2 & 3 — word problems, geometry, measurement, algebra and statistics. No timer, ever — go at your own pace.</p>
+  <a class="back-link" href="index.html">← Back to Everything SATS home</a>
+  <div class="streak-row">
+    <div class="streak-chip">🔥 <span id="streakCount">0</span> day streak</div>
+    <div class="streak-chip">⭐ <span id="totalAnswered">0</span> questions answered</div>
+    <div class="streak-chip">✅ <span id="overallAccuracy">0</span>% correct</div>
+  </div>
+  <div class="difficulty-row">
+    <span class="difficulty-label">Level:</span>
+    <div class="difficulty-tabs" id="difficultyTabs">
+      <button data-level="1" onclick="setDifficulty(1)">Foundation</button>
+      <button data-level="2" onclick="setDifficulty(2)">Expected Standard</button>
+      <button data-level="3" onclick="setDifficulty(3)">Greater Depth</button>
+    </div>
+  </div>
+</header>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <button class="close-x" onclick="closeSettings()">✕</button>
+    <h2 style="margin-top:0">⚙️ Settings</h2>
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Questions per Daily Practice session</div>
+        <div class="setting-sub">Shorter sessions can help if long stretches of focus are hard.</div>
+      </div>
+      <select id="sessionLengthSelect" onchange="saveSettings()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Reduce animation</div>
+        <div class="setting-sub">Turns off all movement/transition effects, even if your device allows them.</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="reduceMotionToggle" onchange="saveSettings()"><span class="slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Calm colours</div>
+        <div class="setting-sub">Softer, lower-contrast colours and no background gradient.</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="calmModeToggle" onchange="saveSettings()"><span class="slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-title">Larger text</div>
+        <div class="setting-sub">Increases question and answer text size.</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="largeTextToggle" onchange="saveSettings()"><span class="slider"></span></label>
+    </div>
+    <p class="setting-note">There is no timer anywhere in this app, on any setting — take as long as you need.</p>
+  </div>
+</div>
+
+<main>
+  <div class="daily-card">
+    <div>
+      <h2>📅 Daily Practice</h2>
+      <p>A mixed set picked just for you — due topics and a few new ones, 10 questions.</p>
+    </div>
+    <button class="btn btn-primary" onclick="startSession('daily')">Start Daily Practice</button>
+  </div>
+
+  <div class="topics-grid" id="topicsGrid"></div>
+
+  <div class="daily-card" style="margin-top:22px">
+    <div>
+      <h2>📄 Past Papers</h2>
+      <p>Real SATs papers back to 2011, organised by year — free, no sign-up, no cost.</p>
+    </div>
+    <a class="btn btn-ghost" href="past-papers.html">Browse Past Papers →</a>
+  </div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal()">✕</button>
+    <span class="modal-topic-tag" id="modalTopicTag"></span>
+    <div class="session-progress" id="sessionProgress"></div>
+    <div class="question-text" id="questionText"></div>
+    <div class="answer-row">
+      <input type="text" id="answerInput" inputmode="decimal" placeholder="Type your answer" autocomplete="off">
+      <button class="btn btn-primary" id="submitBtn" onclick="submitAnswer()">Check</button>
+    </div>
+    <div class="feedback-box" id="feedbackBox">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div id="feedbackBody"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-small" onclick="closeModal()">Stop here</button>
+      <button class="btn btn-secondary" id="nextBtn" style="display:none" onclick="nextQuestion()">Next question →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Topic definitions ---------- */
+const TOPICS = [
+  { id:"numplace", name:"Number & Place Value", icon:"🔢", sub:"Large numbers, rounding, negatives, Roman numerals", color:"blue" },
+  { id:"fdppro", name:"Fractions, Decimals & %", icon:"🍰", sub:"Word problems, equivalence, comparing", color:"red" },
+  { id:"ratio", name:"Ratio & Proportion", icon:"⚖️", sub:"Scaling, sharing, comparing with %", color:"gold" },
+  { id:"algebra", name:"Algebra", icon:"🔤", sub:"Missing numbers, formulae, sequences", color:"purple" },
+  { id:"measurement", name:"Measurement", icon:"📏", sub:"Perimeter, area, volume, time, money", color:"green" },
+  { id:"shapes", name:"Geometry — Shapes", icon:"📐", sub:"Angles, 2D/3D shapes, circles", color:"blue" },
+  { id:"position", name:"Geometry — Position", icon:"🗺️", sub:"Coordinates, translation, reflection", color:"purple" },
+  { id:"statistics", name:"Statistics", icon:"📊", sub:"Charts, tables, mean average", color:"gold" },
+];
+
+/* ---------- Utility ---------- */
+function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+function choice(arr){ return arr[randInt(0, arr.length - 1)]; }
+function gcd(a, b){ return b === 0 ? a : gcd(b, a % b); }
+function fmtFrac(n, d){ return `${n}/${d}`; }
+function commas(n){ return n.toLocaleString('en-GB'); }
+
+/* ---------- Question generators ----------
+   Each returns { text, answer, steps (array of strings), answerNote }
+   answer may be a number or string; checked with tolerant matching. */
+
+function genNumPlace(diff){
+  const kind = choice(diff===1 ? ["round","order"] : diff===3 ? ["placevalue","roman","negword"] : ["round","placevalue","negword"]);
+  if(kind === "round"){
+    const rounders = diff===1 ? [10,100] : [1000,10000];
+    const r = choice(rounders);
+    const n = randInt(r, r*99) + randInt(0, r-1);
+    const rounded = Math.round(n/r)*r;
+    return { text:`Round ${commas(n)} to the nearest ${commas(r)}.`, answer: rounded,
+      steps:[`Look at the digit in the ${r===10?'ones':r===100?'tens':r===1000?'hundreds':'thousands'} place to decide whether to round up or down.`,
+             `${commas(n)} rounds to ${commas(rounded)}.`] };
+  }
+  if(kind === "order"){
+    const nums = Array.from({length:4}, () => randInt(100, diff===1?9999:999999));
+    const sorted = [...nums].sort((a,b)=>a-b);
+    return { text:`Write these in order, smallest first: ${nums.map(commas).join(', ')}`, answer: sorted.join(', '),
+      steps:[`Compare the numbers by their number of digits first, then digit-by-digit from the left.`,
+             `In order: ${sorted.map(commas).join(', ')}`] };
+  }
+  if(kind === "placevalue"){
+    const n = randInt(diff===3?1000000:100000, diff===3?9999999:999999);
+    const digits = String(n).split('');
+    const pos = randInt(0, digits.length-2);
+    const placeNames = ["ones","tens","hundreds","thousands","ten thousands","hundred thousands","millions"];
+    const placeIdx = digits.length - 1 - pos;
+    const digit = digits[pos];
+    const value = Number(digit) * Math.pow(10, placeIdx);
+    return { text:`What is the value of the digit ${digit} in ${commas(n)}?`, answer: value,
+      steps:[`Count the digit's position from the right: it's in the ${placeNames[placeIdx]} place.`,
+             `${digit} in the ${placeNames[placeIdx]} place is worth ${commas(value)}.`] };
+  }
+  if(kind === "roman"){
+    const romanMap = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+    function toRoman(num){ let res=''; for(const [v,s] of romanMap){ while(num>=v){ res+=s; num-=v; } } return res; }
+    const n = randInt(1, 100);
+    return { text:`Write ${n} as a Roman numeral.`, answer: toRoman(n),
+      steps:[`Build it from the largest values down: thousands, then hundreds, tens, ones — using subtraction pairs like IV (4) and IX (9) where needed.`,
+             `${n} = ${toRoman(n)}`] };
+  }
+  // negword
+  const temps = [randInt(-15,-1), randInt(1,20)];
+  const [a,b] = temps;
+  return { text:`The temperature was ${a}°C. It rose by ${b - a > 0 ? '' : ''}${Math.abs(b-a)}°C to reach ${b}°C. True or check: how many degrees did it rise?`, answer: b-a,
+    steps:[`Find the distance from ${a} to ${b} on a number line.`, `${b} − (${a}) = ${b-a}°C`] };
+}
+
+function genFdpPro(diff){
+  const kind = choice(diff===1 ? ["fracof","compare"] : diff===3 ? ["percentchange","fracof","compare"] : ["percentof","fracof","compare"]);
+  if(kind === "fracof"){
+    const total = randInt(2,12) * (diff===3?randInt(4,12):randInt(2,8));
+    const d = choice([2,3,4,5,6,8].filter(x=>total%x===0));
+    const n = randInt(1, d-1);
+    const result = total/d*n;
+    return { text:`A baker made ${total} cakes. ${fmtFrac(n,d)} of them were chocolate. How many chocolate cakes were there?`, answer: result,
+      steps:[`Divide the total by the denominator: ${total} ÷ ${d} = ${total/d}.`, `Multiply by the numerator: ${total/d} × ${n} = ${result}.`] };
+  }
+  if(kind === "percentof"){
+    const pct = choice([10,20,25,50,75,5,15,40,60]);
+    const total = randInt(4,60) * choice([5,10]);
+    const result = (pct/100)*total;
+    return { text:`There are ${total} children in a school club. ${pct}% of them are boys. How many boys are there?`, answer: result,
+      steps:[`Find 10% by dividing by 10: ${(total/10).toFixed(1)}.`, `Scale up to ${pct}%: ${result}.`] };
+  }
+  if(kind === "percentchange"){
+    const start = randInt(20,200) * choice([1,2,5]);
+    const pct = choice([10,20,25,50]);
+    const up = Math.random() < 0.5;
+    const change = (pct/100)*start;
+    const result = up ? start+change : start-change;
+    return { text:`A shop had ${start} items in stock. The stock ${up?'increased':'decreased'} by ${pct}%. How many items are there now?`, answer: result,
+      steps:[`Find ${pct}% of ${start}: ${change}.`, `${up?'Add':'Subtract'} that to the original: ${start} ${up?'+':'−'} ${change} = ${result}.`] };
+  }
+  // compare
+  const d1 = choice([2,3,4]), d2 = choice([5,6,8].filter(x=>x!==d1));
+  const n1 = randInt(1,d1-1), n2 = randInt(1,d2-1);
+  const cross1 = n1*d2, cross2 = n2*d1;
+  const bigger = cross1 > cross2 ? fmtFrac(n1,d1) : cross2 > cross1 ? fmtFrac(n2,d2) : "equal";
+  return { text:`Which is bigger: ${fmtFrac(n1,d1)} or ${fmtFrac(n2,d2)}?`, answer: bigger,
+    steps:[`Give them a common denominator by cross-multiplying: ${n1}×${d2}=${cross1}, and ${n2}×${d1}=${cross2}.`,
+           `${cross1} ${cross1>cross2?'>':cross1<cross2?'<':'='} ${cross2}, so ${bigger} is bigger.`] };
+}
+
+function genRatio(diff){
+  if(diff !== 3 || Math.random() < 0.6){
+    const r1 = randInt(1,4), r2 = randInt(1,4);
+    const parts = r1+r2;
+    const perPart = randInt(2, diff===1?8:20);
+    const total = parts * perPart;
+    return { text:`Share ${total} sweets in the ratio ${r1}:${r2}. How many does the first person get?`, answer: r1*perPart,
+      steps:[`Add the ratio parts: ${r1} + ${r2} = ${parts} parts total.`,
+             `Divide the total by the number of parts: ${total} ÷ ${parts} = ${perPart} per part.`,
+             `The first person gets ${r1} parts: ${r1} × ${perPart} = ${r1*perPart}.`] };
+  }
+  const scale = choice([2,3,4]);
+  const smallSide = randInt(3,12);
+  const bigSide = smallSide*scale;
+  return { text:`Two similar rectangles have a scale factor of ${scale}. The smaller rectangle has a side of ${smallSide}cm. What is the matching side on the larger rectangle?`, answer: bigSide,
+    steps:[`Multiply the small side by the scale factor: ${smallSide} × ${scale} = ${bigSide}cm.`] };
+}
+
+function genAlgebra(diff){
+  const kind = choice(diff===1 ? ["missing1"] : diff===3 ? ["formula","sequence","twounknown"] : ["missing2","sequence"]);
+  if(kind === "missing1"){
+    const x = randInt(2,20), b = randInt(2,15);
+    const total = x+b;
+    return { text:`x + ${b} = ${total}. What is x?`, answer: x,
+      steps:[`Subtract ${b} from both sides: x = ${total} − ${b}.`, `x = ${x}`] };
+  }
+  if(kind === "missing2"){
+    const x = randInt(2,15), m = randInt(2,6), b = randInt(1,20);
+    const total = m*x+b;
+    return { text:`${m} × x + ${b} = ${total}. What is x?`, answer: x,
+      steps:[`Subtract ${b} from both sides: ${m} × x = ${total-b}.`, `Divide by ${m}: x = ${x}.`] };
+  }
+  if(kind === "sequence"){
+    const start = randInt(1,20), step = randInt(2,9);
+    const seq = [0,1,2,3].map(i => start+i*step);
+    const next = start+4*step;
+    return { text:`What is the next number in this sequence? ${seq.join(', ')}, ?`, answer: next,
+      steps:[`Find the pattern between each term: it goes up by ${step} each time.`, `${seq[3]} + ${step} = ${next}`] };
+  }
+  if(kind === "formula"){
+    const a = randInt(2,10), b = randInt(2,10);
+    return { text:`Using the formula T = 2a + b, find T when a = ${a} and b = ${b}.`, answer: 2*a+b,
+      steps:[`Substitute the values in: T = 2 × ${a} + ${b}.`, `T = ${2*a} + ${b} = ${2*a+b}`] };
+  }
+  const x = randInt(1,8), y = randInt(1,8);
+  return { text:`x + y = ${x+y}, and x is ${x}. What is y?`, answer: y,
+    steps:[`Substitute x = ${x}: ${x} + y = ${x+y}.`, `y = ${x+y} − ${x} = ${y}`] };
+}
+
+function genMeasurement(diff){
+  const kind = choice(diff===1 ? ["perimeter","money"] : diff===3 ? ["area2","time2","volume"] : ["area","time","convert"]);
+  if(kind === "perimeter"){
+    const l = randInt(3, diff===1?15:40), w = randInt(3, diff===1?15:40);
+    return { text:`A rectangle is ${l}cm by ${w}cm. What is its perimeter?`, answer: 2*(l+w),
+      steps:[`Perimeter = 2 × (length + width).`, `2 × (${l} + ${w}) = ${2*(l+w)}cm`] };
+  }
+  if(kind === "area"){
+    const l = randInt(3,20), w = randInt(3,20);
+    return { text:`A rectangle is ${l}cm by ${w}cm. What is its area?`, answer: l*w,
+      steps:[`Area = length × width.`, `${l} × ${w} = ${l*w}cm²`] };
+  }
+  if(kind === "area2"){
+    const base = randInt(4,20), height = randInt(4,20);
+    return { text:`A triangle has a base of ${base}cm and a height of ${height}cm. What is its area?`, answer: (base*height)/2,
+      steps:[`Area of a triangle = (base × height) ÷ 2.`, `(${base} × ${height}) ÷ 2 = ${(base*height)/2}cm²`] };
+  }
+  if(kind === "volume"){
+    const l = randInt(2,10), w = randInt(2,10), h = randInt(2,10);
+    return { text:`A cuboid measures ${l}cm × ${w}cm × ${h}cm. What is its volume?`, answer: l*w*h,
+      steps:[`Volume = length × width × height.`, `${l} × ${w} × ${h} = ${l*w*h}cm³`] };
+  }
+  if(kind === "money"){
+    const price = randInt(150, 899)/100;
+    const paid = choice([5,10,20]);
+    const change = Number((paid - price).toFixed(2));
+    return { text:`An item costs £${price.toFixed(2)}. You pay with a £${paid} note. How much change do you get?`, answer: change,
+      steps:[`Subtract the price from the amount paid: £${paid} − £${price.toFixed(2)}.`, `Change = £${change.toFixed(2)}`] };
+  }
+  if(kind === "time"){
+    const startH = randInt(9,15), startM = choice([0,15,30,45]);
+    const durMin = randInt(20,90);
+    let totalMin = startH*60+startM+durMin;
+    const endH = Math.floor(totalMin/60)%24, endM = totalMin%60;
+    const fmt = (h,m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    return { text:`A film starts at ${fmt(startH,startM)} and lasts ${durMin} minutes. What time does it finish?`, answer: fmt(endH,endM),
+      steps:[`Add the duration to the start time: ${fmt(startH,startM)} + ${durMin} minutes.`, `It finishes at ${fmt(endH,endM)}.`] };
+  }
+  const h1 = randInt(1,3), m1 = choice([0,15,30,45]);
+  const h2 = h1 + randInt(1,3), m2 = choice([0,15,30,45]);
+  let totalMinutes = (h2*60+m2) - (h1*60+m1);
+  return { text:`A journey starts at ${String(h1).padStart(2,'0')}:${String(m1).padStart(2,'0')} and ends at ${String(h2).padStart(2,'0')}:${String(m2).padStart(2,'0')}. How many minutes did it take?`, answer: totalMinutes,
+    steps:[`Find the difference between the two times.`, `${totalMinutes} minutes`] };
+}
+
+function genShapes(diff){
+  const kind = choice(diff===1 ? ["line"] : diff===3 ? ["quad","vertical"] : ["triangle","point"]);
+  if(kind === "line"){
+    const a = randInt(20,150);
+    return { text:`Two angles sit on a straight line. One is ${a}°. What is the other angle?`, answer: 180-a,
+      steps:[`Angles on a straight line add up to 180°.`, `180° − ${a}° = ${180-a}°`] };
+  }
+  if(kind === "point"){
+    const a = randInt(60,150), b = randInt(60,150);
+    const rem = 360-a-b;
+    return { text:`Three angles meet at a point: ${a}°, ${b}°, and an unknown angle. What is the unknown angle?`, answer: rem,
+      steps:[`Angles around a point add up to 360°.`, `360° − ${a}° − ${b}° = ${rem}°`] };
+  }
+  if(kind === "triangle"){
+    const a = randInt(30,100), b = randInt(30,100-((a>100)?0:0));
+    const c = 180-a-b;
+    if(c<=0) return genShapes(diff);
+    return { text:`A triangle has angles of ${a}° and ${b}°. What is the third angle?`, answer: c,
+      steps:[`Angles in a triangle add up to 180°.`, `180° − ${a}° − ${b}° = ${c}°`] };
+  }
+  if(kind === "quad"){
+    const a = randInt(60,120), b = randInt(60,120), c = randInt(60,120);
+    const d = 360-a-b-c;
+    if(d<=0) return genShapes(diff);
+    return { text:`A quadrilateral has angles of ${a}°, ${b}° and ${c}°. What is the fourth angle?`, answer: d,
+      steps:[`Angles in a quadrilateral add up to 360°.`, `360° − ${a}° − ${b}° − ${c}° = ${d}°`] };
+  }
+  const a = randInt(20,160);
+  return { text:`Two lines cross. One of the angles formed is ${a}°. What is the angle vertically opposite it?`, answer: a,
+    steps:[`Vertically opposite angles (across the crossing point) are always equal.`, `The opposite angle is also ${a}°.`] };
+}
+
+function genPosition(diff){
+  const kind = diff===1 ? "translate" : choice(["translate","reflect"]);
+  const range = diff===3 ? [-10,10] : [0,10];
+  const x = randInt(range[0], range[1]), y = randInt(range[0], range[1]);
+  if(kind === "translate"){
+    const dx = randInt(diff===1?1:-8, 8), dy = randInt(diff===1?1:-8, 8);
+    const nx = x+dx, ny = y+dy;
+    return { text:`A point starts at (${x}, ${y}). It moves ${Math.abs(dx)} ${dx>=0?'right':'left'} and ${Math.abs(dy)} ${dy>=0?'up':'down'}. What are its new coordinates?`, answer: `(${nx}, ${ny})`,
+      steps:[`Add the horizontal move to the x-coordinate: ${x} ${dx>=0?'+':'−'} ${Math.abs(dx)} = ${nx}.`,
+             `Add the vertical move to the y-coordinate: ${y} ${dy>=0?'+':'−'} ${Math.abs(dy)} = ${ny}.`,
+             `New coordinates: (${nx}, ${ny})`] };
+  }
+  const axis = choice(["x-axis","y-axis"]);
+  const rx = axis === "y-axis" ? -x : x;
+  const ry = axis === "x-axis" ? -y : y;
+  return { text:`A point is at (${x}, ${y}). What are its coordinates after being reflected in the ${axis}?`, answer: `(${rx}, ${ry})`,
+    steps:[`Reflecting in the ${axis} flips the sign of the ${axis==='x-axis'?'y':'x'}-coordinate.`, `New coordinates: (${rx}, ${ry})`] };
+}
+
+function genStatistics(diff){
+  const kind = choice(diff===3 ? ["findmissing","mean"] : ["mean","compare"]);
+  const n = diff===1 ? 4 : diff===3 ? 6 : 5;
+  const nums = Array.from({length:n}, () => randInt(diff===1?1:5, diff===1?20:diff===3?100:50));
+  if(kind === "mean"){
+    const sum = nums.reduce((a,b)=>a+b,0);
+    const mean = sum/n;
+    return { text:`Find the mean of: ${nums.join(', ')}`, answer: Number(mean.toFixed(2)),
+      steps:[`Add all the numbers together: ${nums.join(' + ')} = ${sum}.`, `Divide by how many numbers there are (${n}): ${sum} ÷ ${n} = ${mean.toFixed(2)}.`] };
+  }
+  if(kind === "compare"){
+    const idx1 = 0, idx2 = randInt(1,n-1);
+    const diffVal = Math.abs(nums[idx1]-nums[idx2]);
+    return { text:`Here are the results of a survey: ${nums.map((v,i)=>`item ${i+1}: ${v}`).join(', ')}. What is the difference between item 1 and item ${idx2+1}?`, answer: diffVal,
+      steps:[`Subtract the smaller from the larger: |${nums[idx1]} − ${nums[idx2]}|.`, `Difference = ${diffVal}`] };
+  }
+  const mean = randInt(10,30);
+  const knownNums = Array.from({length:n-1}, () => randInt(5,40));
+  const missingVal = mean*n - knownNums.reduce((a,b)=>a+b,0);
+  if(missingVal <= 0) return genStatistics(diff);
+  return { text:`${n} numbers have a mean of ${mean}. ${n-1} of them are: ${knownNums.join(', ')}. What is the missing number?`, answer: missingVal,
+    steps:[`Total of all ${n} numbers = mean × count = ${mean} × ${n} = ${mean*n}.`,
+           `Total of the known numbers: ${knownNums.join(' + ')} = ${knownNums.reduce((a,b)=>a+b,0)}.`,
+           `Missing number = ${mean*n} − ${knownNums.reduce((a,b)=>a+b,0)} = ${missingVal}`] };
+}
+
+const GENERATORS = {
+  numplace: genNumPlace, fdppro: genFdpPro, ratio: genRatio, algebra: genAlgebra,
+  measurement: genMeasurement, shapes: genShapes, position: genPosition, statistics: genStatistics,
+};
+
+/* ---------- Spaced repetition (simple Leitner system) ----------
+   Each topic has a "box" 1-5. Box determines how many questions of
+   that topic show up in a Daily Practice session relative to others --
+   lower box (recently wrong / new) = more frequent, higher box (mastered) = rarer.
+   Correct answer -> box + 1 (max 5). Wrong answer -> box back to 1. */
+function loadProgress(){
+  const raw = localStorage.getItem('sats_reasoning_progress');
+  if(raw){ try { return JSON.parse(raw); } catch(e){} }
+  const fresh = {};
+  TOPICS.forEach(t => fresh[t.id] = { box:1, correct:0, attempted:0 });
+  return fresh;
+}
+function saveProgress(){ localStorage.setItem('sats_reasoning_progress', JSON.stringify(progress)); }
+
+let progress = loadProgress();
+
+function loadStats(){
+  const raw = localStorage.getItem('sats_reasoning_stats');
+  if(raw){ try { return JSON.parse(raw); } catch(e){} }
+  return { totalAnswered:0, totalCorrect:0, streak:0, lastActiveDate:null };
+}
+function saveStats(){ localStorage.setItem('sats_reasoning_stats', JSON.stringify(stats)); }
+let stats = loadStats();
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function updateStreakOnLoad(){
+  const today = todayStr();
+  if(stats.lastActiveDate === today) return; // already counted today
+  const yest = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  if(stats.lastActiveDate === yest){ /* keep streak, will bump when they answer something today */ }
+  else if(stats.lastActiveDate !== null){ stats.streak = 0; } // gap -> streak broken until they answer today
+}
+updateStreakOnLoad();
+
+function bumpStreakIfNewDay(){
+  const today = todayStr();
+  if(stats.lastActiveDate !== today){
+    stats.streak += 1;
+    stats.lastActiveDate = today;
+    saveStats();
+  }
+}
+
+/* ---------- Rendering ---------- */
+const topicColors = { blue:"var(--blue)", green:"var(--green)", red:"var(--red)", gold:"var(--gold)", purple:"var(--purple)" };
+const topicColorsLight = { blue:"var(--blue-light)", green:"var(--green-light)", red:"var(--red-light)", gold:"var(--gold-light)", purple:"var(--purple-light)" };
+
+function renderTopics(){
+  const grid = document.getElementById('topicsGrid');
+  grid.innerHTML = TOPICS.map(t => {
+    const p = progress[t.id];
+    const pct = Math.round(((p.box - 1) / 4) * 100);
+    return `
+      <div class="topic-card" style="border-color:${topicColorsLight[t.color]}" onclick="startSession('${t.id}')">
+        <div class="topic-head">
+          <span class="topic-icon">${t.icon}</span>
+          <span class="topic-name">${t.name}</span>
+        </div>
+        <div class="topic-sub">${t.sub}</div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${topicColors[t.color]}"></div></div>
+        <div class="progress-label"><span>Mastery: ${pct}%</span><span>${p.correct}/${p.attempted} correct</span></div>
+      </div>`;
+  }).join('');
+}
+
+function renderHeaderStats(){
+  document.getElementById('streakCount').textContent = stats.streak;
+  document.getElementById('totalAnswered').textContent = stats.totalAnswered;
+  document.getElementById('overallAccuracy').textContent = stats.totalAnswered ? Math.round((stats.totalCorrect/stats.totalAnswered)*100) : 0;
+}
+
+const CORRECT_MESSAGES = [
+  '✅ Correct — great work!',
+  '✅ Spot on!',
+  '✅ Yes! That\'s exactly right.',
+  '✅ Nailed it — well done.',
+  '✅ Correct — you\'ve got this.',
+];
+const INCORRECT_MESSAGES = [
+  '💪 Not this time — but here\'s exactly how to get it',
+  '💪 Close, keep going — here\'s the method',
+  '💪 That\'s okay, this one\'s tricky — here\'s how it works',
+  '💪 Good try — let\'s look at the steps together',
+];
+
+/* ---------- Session logic ---------- */
+let session = { topicIds:[], questions:[], index:0, currentQ:null };
+
+function buildDailyQueue(){
+  // Weight topics by inverse box (lower box = more due) -- simple weighted pick
+  const weights = TOPICS.map(t => ({ id:t.id, w: 6 - progress[t.id].box }));
+  const totalW = weights.reduce((s,x)=>s+x.w, 0);
+  const queue = [];
+  for(let i=0; i<appSettings.sessionLength; i++){
+    let r = Math.random() * totalW, acc = 0, pick = weights[0].id;
+    for(const w of weights){ acc += w.w; if(r <= acc){ pick = w.id; break; } }
+    queue.push(pick);
+  }
+  return queue;
+}
+
+function startSession(kind){
+  if(kind === 'daily'){
+    session.topicIds = buildDailyQueue();
+  } else {
+    session.topicIds = new Array(8).fill(kind);
+  }
+  session.index = 0;
+  openModal();
+  loadQuestionAt(0);
+}
+
+function loadQuestionAt(i){
+  if(i >= session.topicIds.length){ closeModal(); return; }
+  const topicId = session.topicIds[i];
+  const topic = TOPICS.find(t => t.id === topicId);
+  session.currentQ = GENERATORS[topicId](getDifficulty());
+  session.currentQ.topicId = topicId;
+
+  document.getElementById('modalTopicTag').textContent = `${topic.icon} ${topic.name}`;
+  document.getElementById('modalTopicTag').style.background = topicColorsLight[topic.color];
+  document.getElementById('modalTopicTag').style.color = topicColors[topic.color];
+  document.getElementById('sessionProgress').textContent = `Question ${i+1} of ${session.topicIds.length}`;
+  document.getElementById('questionText').textContent = session.currentQ.text;
+  document.getElementById('answerInput').value = '';
+  document.getElementById('answerInput').disabled = false;
+  document.getElementById('submitBtn').style.display = 'inline-block';
+  document.getElementById('feedbackBox').className = 'feedback-box';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('answerInput').focus();
+}
+
+function normalizeAnswer(s){
+  return String(s).trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function checkAnswer(userInput, q){
+  const given = normalizeAnswer(userInput);
+  const candidates = [normalizeAnswer(q.answer)].concat((q.answerAliases||[]).map(normalizeAnswer));
+  if(candidates.includes(given)) return true;
+  // tolerant numeric compare (handles "0.30" vs "0.3", trailing zeros, etc.)
+  const numGiven = parseFloat(given);
+  const numAns = parseFloat(q.answer);
+  if(!isNaN(numGiven) && !isNaN(numAns) && Math.abs(numGiven - numAns) < 0.005) return true;
+  return false;
+}
+
+function submitAnswer(){
+  const input = document.getElementById('answerInput');
+  const q = session.currentQ;
+  if(!input.value.trim()) return;
+  const correct = checkAnswer(input.value, q);
+
+  // update progress
+  const p = progress[q.topicId];
+  p.attempted += 1;
+  if(correct){ p.correct += 1; p.box = Math.min(5, p.box + 1); }
+  else { p.box = 1; }
+  saveProgress();
+
+  stats.totalAnswered += 1;
+  if(correct) stats.totalCorrect += 1;
+  bumpStreakIfNewDay();
+  saveStats();
+  renderHeaderStats();
+  renderTopics();
+
+  const box = document.getElementById('feedbackBox');
+  box.className = 'feedback-box show ' + (correct ? 'correct' : 'incorrect');
+  document.getElementById('feedbackTitle').innerHTML = correct
+    ? choice(CORRECT_MESSAGES)
+    : choice(INCORRECT_MESSAGES);
+  const stepsHtml = q.steps.map(s => `<li>${s}</li>`).join('');
+  document.getElementById('feedbackBody').innerHTML = `
+    ${correct ? '' : `<p style="margin:0 0 10px">Here’s the working for full marks — have a read through, then try one like it again in a bit:</p>`}
+    <ol class="working-steps">${stepsHtml}</ol>
+    <div class="final-answer">Full-marks answer: ${q.answer}</div>
+  `;
+
+  input.disabled = true;
+  document.getElementById('submitBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'inline-block';
+  document.getElementById('nextBtn').focus();
+}
+
+function nextQuestion(){
+  session.index += 1;
+  loadQuestionAt(session.index);
+}
+
+function openModal(){ document.getElementById('overlay').classList.add('show'); }
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+
+document.getElementById('answerInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    if(document.getElementById('submitBtn').style.display !== 'none') submitAnswer();
+    else nextQuestion();
+  }
+});
+document.getElementById('overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'overlay') closeModal();
+});
+
+/* ---------- Difficulty ---------- */
+function getDifficulty(){
+  return Number(localStorage.getItem('sats_reasoning_difficulty') || '2');
+}
+function setDifficulty(level){
+  localStorage.setItem('sats_reasoning_difficulty', String(level));
+  renderDifficultyTabs();
+}
+function renderDifficultyTabs(){
+  const level = getDifficulty();
+  document.querySelectorAll('#difficultyTabs button').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.level) === level);
+  });
+}
+
+/* ---------- Accessibility settings ---------- */
+function loadSettings(){
+  const raw = localStorage.getItem('sats_reasoning_settings');
+  if(raw){ try { return JSON.parse(raw); } catch(e){} }
+  return { sessionLength:10, reduceMotion:false, calmMode:false, largeText:false };
+}
+let appSettings = loadSettings();
+
+function applySettings(){
+  document.documentElement.setAttribute('data-large-text', appSettings.largeText ? 'true' : 'false');
+  document.documentElement.setAttribute('data-calm', appSettings.calmMode ? 'true' : 'false');
+  if(appSettings.reduceMotion){
+    document.documentElement.style.setProperty('--force-no-motion', '1');
+    const styleTag = document.getElementById('forceMotionStyle') || document.createElement('style');
+    styleTag.id = 'forceMotionStyle';
+    styleTag.textContent = '*{ transition:none !important; animation:none !important; }';
+    document.head.appendChild(styleTag);
+  } else {
+    const styleTag = document.getElementById('forceMotionStyle');
+    if(styleTag) styleTag.remove();
+  }
+  document.getElementById('sessionLengthSelect').value = String(appSettings.sessionLength);
+  document.getElementById('reduceMotionToggle').checked = appSettings.reduceMotion;
+  document.getElementById('calmModeToggle').checked = appSettings.calmMode;
+  document.getElementById('largeTextToggle').checked = appSettings.largeText;
+}
+
+function saveSettings(){
+  appSettings = {
+    sessionLength: Number(document.getElementById('sessionLengthSelect').value),
+    reduceMotion: document.getElementById('reduceMotionToggle').checked,
+    calmMode: document.getElementById('calmModeToggle').checked,
+    largeText: document.getElementById('largeTextToggle').checked,
+  };
+  localStorage.setItem('sats_reasoning_settings', JSON.stringify(appSettings));
+  applySettings();
+}
+
+function openSettings(){ document.getElementById('settingsOverlay').classList.add('show'); }
+function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('show'); }
+document.getElementById('settingsOverlay').addEventListener('click', (e) => {
+  if(e.target.id === 'settingsOverlay') closeSettings();
+});
+
+renderTopics();
+renderHeaderStats();
+renderDifficultyTabs();
+applySettings();
+</script>
+</body>
+</html>
