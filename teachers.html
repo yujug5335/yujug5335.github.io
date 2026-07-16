@@ -1039,13 +1039,74 @@ function genStatistics(diff){
            `Missing number = ${mean*n} − ${knownNums.reduce((a,b)=>a+b,0)} = ${missingVal}`] };
 }
 
-const ARITH_GENS = { addsub: genAddSub, mult: genMult, div: genDiv, bodmas: genBodmas, fractions: genFractions, decimals: genDecimals, percent: genPercent, negatives: genNegatives };
-const REASON_GENS = { numplace: genNumPlace, fdppro: genFdpPro, ratio: genRatio, algebra: genAlgebra, measurement: genMeasurement, shapes: genShapes, position: genPosition, statistics: genStatistics };
+/* ---------- Class Quiz extras: contextual word-problem generators ---------- */
+function genSweets(diff){
+  const kinds = diff <= 1 ? ["share","fraction"] : ["share","remainder","ratio","fraction"];
+  const kind = choice(kinds);
+  const names = ["Amy","Ben","Chloe","Dev","Ella","Finn","Grace","Harri","Ivy","Jamal"];
+  if(kind === "share"){
+    const children = randInt(diff===0?2:3, diff===0?5:8);
+    const each = randInt(diff===0?2:4, diff===3?15:9);
+    const total = children * each;
+    return { text:`A jar has ${total} sweets, shared equally between ${children} children. How many sweets does each child get?`, answer:String(each),
+      steps:[`Divide the total by the number of children: ${total} ÷ ${children}.`, `${total} ÷ ${children} = ${each}`] };
+  }
+  if(kind === "remainder"){
+    const children = randInt(3,7);
+    const each = randInt(4,12);
+    const leftover = randInt(1, children-1);
+    const total = children*each + leftover;
+    return { text:`There are ${total} sweets shared as equally as possible between ${children} children, with the leftovers put aside. How many sweets does each child get, and how many are left over?`, answer:`${each} each, ${leftover} left over`,
+      answerAliases:[`${each} remainder ${leftover}`, `${each} r ${leftover}`],
+      steps:[`Divide ${total} by ${children}: how many whole times does ${children} go in?`, `${total} ÷ ${children} = ${each} remainder ${leftover}`] };
+  }
+  if(kind === "ratio"){
+    const [a,b] = choice([[2,3],[3,4],[1,4],[2,5],[3,5]]);
+    const scale = randInt(2, diff===3?9:5);
+    const total = (a+b)*scale;
+    const nameA = choice(names), nameB = choice(names.filter(n=>n!==nameA));
+    return { text:`A bag of ${total} sweets is shared between ${nameA} and ${nameB} in the ratio ${a}:${b}. How many sweets does ${nameA} get?`, answer:String(a*scale),
+      steps:[`Total parts = ${a} + ${b} = ${a+b}.`, `Each part = ${total} ÷ ${a+b} = ${scale}.`, `${nameA}'s share = ${a} × ${scale} = ${a*scale}.`] };
+  }
+  // fraction (numerator/denominator kept coprime so it's always shown in simplest form)
+  const denom = choice(diff<=1?[2,4,5]:[3,5,6,8]);
+  let num;
+  do { num = randInt(1, denom-1); } while(gcd(num, denom) !== 1);
+  const total = denom * randInt(2, diff===3?9:6);
+  const colour = choice(["red","green","yellow","orange","purple"]);
+  return { text:`There are ${total} sweets in a jar. ${num}/${denom} of them are ${colour}. How many ${colour} sweets are there?`, answer:String((total/denom)*num),
+    steps:[`Find one part: ${total} ÷ ${denom} = ${total/denom}.`, `${num}/${denom} of ${total} = ${total/denom} × ${num} = ${(total/denom)*num}.`] };
+}
+
+function genAngles360(diff){
+  const kinds = diff <= 1 ? ["two","fullturns"] : ["two","three","fullturns"];
+  const kind = choice(kinds);
+  if(kind === "two"){
+    const a = randInt(diff===0?30:20, 320);
+    const b = 360 - a;
+    return { text:`Two angles meet at a point and together make a full turn. One angle is ${a}°. What is the other angle?`, answer:`${b}°`, answerAliases:[String(b)],
+      steps:[`Angles around a point always add up to 360°.`, `360° − ${a}° = ${b}°`] };
+  }
+  if(kind === "three"){
+    const a = randInt(40,150), b = randInt(40,150);
+    const c = 360 - a - b;
+    if(c < 10) return genAngles360(diff);
+    return { text:`Three angles meet at a point: ${a}°, ${b}° and x°. What is the value of x?`, answer:`${c}°`, answerAliases:[String(c)],
+      steps:[`Angles around a point add up to 360°.`, `x = 360° − ${a}° − ${b}° = ${c}°`] };
+  }
+  // full turns
+  const turns = randInt(2, diff===3?7:4);
+  return { text:`A skater spins through ${turns} full turns. How many degrees is that in total?`, answer:`${turns*360}°`, answerAliases:[String(turns*360)],
+    steps:[`One full turn is 360°.`, `${turns} × 360° = ${turns*360}°`] };
+}
+
+const ARITH_GENS = { addsub: genAddSub, mult: genMult, div: genDiv, bodmas: genBodmas, fractions: genFractions, decimals: genDecimals, percent: genPercent, negatives: genNegatives, sweets: genSweets };
+const REASON_GENS = { numplace: genNumPlace, fdppro: genFdpPro, ratio: genRatio, algebra: genAlgebra, measurement: genMeasurement, shapes: genShapes, position: genPosition, statistics: genStatistics, angles360: genAngles360 };
 const TOPIC_LABELS = {
   addsub:"Addition & Subtraction", mult:"Multiplication", div:"Division", bodmas:"Order of Operations",
-  fractions:"Fractions", decimals:"Decimals", percent:"Percentages", negatives:"Negative Numbers",
+  fractions:"Fractions", decimals:"Decimals", percent:"Percentages", negatives:"Negative Numbers", sweets:"Sweets Word Problems",
   numplace:"Number & Place Value", fdppro:"Fractions/Decimals/%", ratio:"Ratio & Proportion", algebra:"Algebra",
-  measurement:"Measurement", shapes:"Geometry — Shapes", position:"Geometry — Position", statistics:"Statistics",
+  measurement:"Measurement", shapes:"Geometry — Shapes", position:"Geometry — Position", statistics:"Statistics", angles360:"Angles Around a Point",
 };
 
 /* ---------- Setup state ---------- */

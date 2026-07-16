@@ -80,6 +80,11 @@
   .tile.external{border-color:var(--line)}
   .tile.external .external-badge{background:var(--gold-light,#FCF1DD); color:#B8860B}
   .section-note{font-size:.84rem; color:var(--ink-soft); margin:-8px 0 14px}
+  .curiosity-card{
+    background:var(--bg-alt); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:26px; text-align:center;
+  }
+  .curiosity-fact{font-size:1.1rem; font-weight:600; line-height:1.5; margin-bottom:18px; min-height:2.2em}
   .stat-banner{
     background:linear-gradient(120deg,var(--teal) 0%,var(--teal-dark) 100%);
     color:#fff; text-align:center; padding:28px 16px; margin-top:10px;
@@ -249,6 +254,21 @@
         <span class="tile-sub">News explained clearly and safely for kids.</span>
         <span class="tile-status external-badge">↗ External site</span>
       </a>
+      <a class="tile live external" href="https://www.khanacademy.org/" target="_blank" rel="noopener">
+        <span class="tile-icon">🎓</span>
+        <span class="tile-name">Khan Academy</span>
+        <span class="tile-sub">Free video lessons and practice on almost any subject.</span>
+        <span class="tile-status external-badge">↗ External site</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">Curiosity Corner</div>
+    <p class="section-note">One random fact, on demand — no reason needed.</p>
+    <div class="curiosity-card">
+      <div class="curiosity-fact" id="curiosityFact">Tap the button for a random fact!</div>
+      <button class="btn btn-primary" onclick="showRandomFact()">🎲 Give me a fact</button>
     </div>
   </section>
 </main>
@@ -275,6 +295,53 @@
     .catch(() => { document.querySelector('.stat-banner').style.display = 'none'; });
 
 /* ---------- Reading background colour (site-wide, shared preference) ---------- */
+/* ---------- Curiosity Corner: a random fun fact, no login needed ---------- */
+const FUN_FACTS = [
+  "A bolt of lightning is hotter than the surface of the Sun.",
+  "Honey never goes off — archaeologists have found pots of edible honey in ancient Egyptian tombs.",
+  "Octopuses have three hearts and blue blood.",
+  "A single fluffy cloud can weigh more than a million kilograms.",
+  "Sharks have been around longer than trees — sharks appeared over 400 million years ago, trees around 350 million years ago.",
+  "Your body has enough iron in it to make a small nail.",
+  "A group of flamingos is called a 'flamboyance'.",
+  "You can't actually see the Great Wall of China from space with the naked eye — that's a myth.",
+  "Bananas are naturally very slightly radioactive, because of the potassium inside them — completely harmless to eat.",
+  "A day on Venus is longer than a year on Venus.",
+  "Wombat poo comes out cube-shaped.",
+  "Some turtles can breathe through their bottoms.",
+  "The tallest mountain in the whole solar system, Olympus Mons, is on Mars — almost three times taller than Mount Everest.",
+  "There are more possible ways to shuffle a deck of cards than there are atoms on Earth.",
+  "A group of crows is called a 'murder'.",
+  "Butterflies taste with their feet.",
+  "The Eiffel Tower actually grows a little taller in summer, as the metal expands in the heat.",
+  "Some species of jellyfish are biologically immortal.",
+  "An ostrich's eye is bigger than its brain.",
+  "Giant sequoia trees can live for over 3,000 years.",
+  "Venus is the hottest planet in our solar system, even though Mercury is closer to the Sun.",
+  "Humans share roughly 60% of their DNA with bananas.",
+  "One of the shortest wars in recorded history lasted well under an hour, between Britain and Zanzibar in 1896.",
+  "Starfish don't have a brain or blood.",
+  "A single strand of spider silk is stronger, weight for weight, than steel.",
+  "The Antarctic ice sheet holds around 70% of all the fresh water on Earth.",
+  "Koalas have fingerprints so similar to humans' that they've occasionally confused crime scene investigators.",
+  "Scientists believe it may 'rain' diamonds deep inside Neptune and Uranus.",
+  "The human nose can remember around 50,000 different smells.",
+  "Sea otters hold hands while they sleep, so they don't drift apart.",
+  "The world's oldest known living tree is thought to be over 4,800 years old.",
+  "Mount Everest grows about 4mm taller every year.",
+  "A blue whale's heart is roughly the size of a small car.",
+  "Some parts of the Sahara Desert have never once recorded rainfall.",
+  "Cows can form close friendships with other cows, and get stressed when separated from them.",
+  "Hot water can, in certain conditions, freeze faster than cold water — this odd effect is called the Mpemba effect.",
+];
+let lastFactIndex = -1;
+function showRandomFact(){
+  let i;
+  do { i = Math.floor(Math.random() * FUN_FACTS.length); } while(i === lastFactIndex && FUN_FACTS.length > 1);
+  lastFactIndex = i;
+  document.getElementById('curiosityFact').textContent = FUN_FACTS[i];
+}
+
 function loadReadingBg(){ return localStorage.getItem('sats_reading_bg') || 'white'; }
 function applyReadingBg(){
   const bg = loadReadingBg();
